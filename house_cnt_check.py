@@ -59,7 +59,6 @@ house_cnt = 0
 for i in detail_link_list:
     house_cnt+=1
 
-# 전체 쉐어하우스 업체 개수는 895개
 print("전체 쉐어하우스 업체 개수:",house_cnt)
 
 # 브라우저 종료

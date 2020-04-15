@@ -1,20 +1,15 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from time import *
 import pickle
 from selenium.common.exceptions import *
 
+start = time()
 path = "./chromedriver.exe"
-
-options = webdriver.ChromeOptions()
-options.add_argument('headless')
-options.add_argument('window-size=1920x1080')
-options.add_argument("disable-gpu")
-# 혹은 options.add_argument("--disable-gpu")
-
-# UserAgent값을 바꿔줍시다!
-options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36")
 
 driver = webdriver.Chrome(path)
 driver.maximize_window()
@@ -50,43 +45,40 @@ detail_link_list = []
 
 for house in house_lists_elem:
     detail_link_list.append(house.get_property("href"))
-    
+
 # 중복 제거
 detail_link_list = list(set(detail_link_list))
 
-# content 담은 리스트 
+# content 담은 리스트
 data_list = []
+listing_time=time()-start
+print(listing_time)
+# 인덱스
+i = 1
 
-#인덱스
-i=1
+driver2 = webdriver.Chrome(path)
+driver2.maximize_window()
 
 for item in detail_link_list:
-    print("주소:",item)
-    print("인덱스:",i)
+    detail_start=time()
+    print("주소:", item)
+    print("인덱스:", i)
 
-    driver2 = webdriver.Chrome(path,options=options)
-    driver2.maximize_window()
-
-    driver2.implicitly_wait(3)
     # 셰어킴 상세페이지
     driver2.get(item)
 
-    while True:
-        # Scroll down to bottom                               
-        driver2.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        
-        sleep(0.5)
-                                            
-        break
+    WebDriverWait(driver2, 5).until(
+        EC.presence_of_element_located((By.ID, "root"))
+    )
 
     # 매물 정보
-    try: 
+    try:
         product_info = driver2.find_element_by_xpath("""//*[@id="blur-wrap"]/div[3]/div[1]/div[1]/section[1]""")
         product_info_data = product_info.text.strip()
     except NoSuchElementException:
         pass
     # 하우스 정보
-    try: 
+    try:
         house_info = driver2.find_element_by_xpath("""//*[@id="blur-wrap"]/div[3]/div[1]/div[1]/section[2]""")
         house_info_data = house_info.text.strip()
     except NoSuchElementException:
@@ -117,26 +109,28 @@ for item in detail_link_list:
         pass
     # 공인중개사 연락처
     try:
-        phone = driver2.find_element_by_xpath("""//*[@id="blur-wrap"]/div[3]/div[1]/div[2]/div/div[1]/div[2]/div/div[1]""")
+        phone = driver2.find_element_by_xpath(
+            """//*[@id="blur-wrap"]/div[3]/div[1]/div[2]/div/div[1]/div[2]/div/div[1]""")
         phone_data = phone.text.strip()
     except NoSuchElementException:
         pass
 
-     # 딕셔너리에 데이터(리스트 형태)로 저장
-    dic = {"매물 정보": product_info_data,"하우스 정보": house_info_data,"상세 정보": detail_info_data,"공간 정보": option_info_data,
-             "입주 상담": price_data,"입지 정보": address_data,"공인 중개사 연락처": phone_data}
+    # 딕셔너리에 데이터(리스트 형태)로 저장
+    dic = {"매물 정보": product_info_data, "하우스 정보": house_info_data, "상세 정보": detail_info_data, "공간 정보": option_info_data,
+           "입주 상담": price_data, "입지 정보": address_data, "공인 중개사 연락처": phone_data}
     # print("딕셔너리 :", dic)
 
     # 리스트에 딕셔너리 저장
     data_list.append(dic)
 
-    i+=1
+    i += 1
 
-    driver2.close()
+    print(time()-detail_start)
 
 # 브라우저 종료
+driver2.close()
 driver.close()
 
 # 파일 쓰기
-with open("sharekim_detail.pickle","wb") as fw:
+with open("sharekim_detail.pickle", "wb") as fw:
     pickle.dump(data_list, fw)

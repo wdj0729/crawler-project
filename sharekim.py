@@ -5,18 +5,10 @@ from time import *
 import pickle
 from selenium.common.exceptions import *
 
+start = time()
 path = "./chromedriver.exe"
 
-options = webdriver.ChromeOptions()
-options.add_argument('headless')
-options.add_argument('window-size=1920x1080')
-options.add_argument("disable-gpu")
-# 혹은 options.add_argument("--disable-gpu")
-
-# UserAgent값을 바꿔줍시다!
-options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36")
-
-driver = webdriver.Chrome(path,options=options)
+driver = webdriver.Chrome(path)
 driver.maximize_window()
 
 driver.implicitly_wait(3)
@@ -53,13 +45,15 @@ for house in house_lists_elem:
 
 # content 담은 리스트 
 data_list = []
+listing_time=time()-start
+print(listing_time)
 
 #인덱스
 i=1
 
 #검색한 쉐어하우스 리스트 정보
 for item in detail_link_list:
-
+    detail_start=time()
     print("인덱스:",i)
 
     #업체명
@@ -77,7 +71,9 @@ for item in detail_link_list:
     # 리스트에 딕셔너리 저장
     data_list.append(dic)
     
-    i+=1
+    i += 1
+
+    print(time()-detail_start)
 
 # 브라우저 종료
 driver.close()

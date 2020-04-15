@@ -1,6 +1,6 @@
 import pickle
 
-# sharekim.pickle의 index 0부터 3393까지, 전체 매물 개수는 3394개
+# sharekim.pickle의 index 0~n
 try:
     with open("sharekim.pickle","rb") as fr:
             data = pickle.load(fr)
