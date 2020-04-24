@@ -38,6 +38,7 @@ while True:
 html = driver.page_source
 soup = BeautifulSoup(html, 'html.parser')
 
+# 상세 페이지 매물 링크 저장
 house_list_warp_elem = driver.find_element_by_xpath("""//*[@id="root"]/div[3]/div[2]/div[1]/div[2]""")
 house_lists_elem = house_list_warp_elem.find_elements_by_tag_name("a")
 
@@ -109,8 +110,7 @@ for item in detail_link_list:
         pass
     # 공인중개사 연락처
     try:
-        phone = driver2.find_element_by_xpath(
-            """//*[@id="blur-wrap"]/div[3]/div[1]/div[2]/div/div[1]/div[2]/div/div[1]""")
+        phone = driver2.find_element_by_xpath("""//*[@id="blur-wrap"]/div[3]/div[1]/div[2]/div/div[1]/div[2]/div/div[1]""")
         phone_data = phone.text.strip()
     except NoSuchElementException:
         pass
