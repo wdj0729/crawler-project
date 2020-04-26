@@ -45,7 +45,8 @@ while True:
 # test.csv파일을 쓰기모드(w)로 열기
 f = open("test.csv","w",encoding="UTF-8")
 # 헤더 추가하기
-f.write("매물명,지역,보증금,월임대료,고정관리비/광열비,방개수,화장실개수")
+f.write("매물명,지역,보증금,월임대료,고정관리비,공과금(1/N),방개수,화장실개수,전용면적,"
+"쇼파,와이파이,에어컨,세탁기,건조대,청소기,전자레인지,냉장고,다리미,정수기,토스터기,전기포트")
 f.write("\n")
 
 html = driver.page_source
@@ -82,6 +83,9 @@ for item in detail_link_list:
     WebDriverWait(driver2, 5).until(
         EC.presence_of_element_located((By.ID, "root"))
     )
+
+    sleep(0.1)
+
     # 매물명
     try:
         house_name = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[2]/div/h1""")
@@ -95,9 +99,6 @@ for item in detail_link_list:
     except NoSuchElementException:
         loc_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[1]/div[1]/div[2]/h1""")
         loc_data = loc_info.text.strip()
-    except NoSuchElementException:
-        loc_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[1]/div[1]/div[2]/h1""")
-        loc_data = loc_info.text.strip()
     # 보증금
     try:
         deposit_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[3]/div[1]/div[2]/div[1]/h1""")
@@ -105,10 +106,6 @@ for item in detail_link_list:
         deposit_data = deposit_data.replace(",","")
     except NoSuchElementException:
         deposit_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[1]/div[2]/div[1]/h1""")
-        deposit_data = deposit_info.text.strip()
-        deposit_data = deposit_data.replace(",","")
-    except NoSuchElementException:
-        deposit_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[1]/div[2]/div[1]/h1""")
         deposit_data = deposit_info.text.strip()
         deposit_data = deposit_data.replace(",","")
     # 월임대료
@@ -120,22 +117,37 @@ for item in detail_link_list:
         month_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[1]/div[2]/div[2]/h1""")
         month_data = month_info.text.strip()
         month_data = month_data.replace(",","")
-    except NoSuchElementException:
-        month_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[1]/div[2]/div[2]/h1""")
-        month_data = month_info.text.strip()
-    # 고정관리비
+    # 고정관리비/공과금
     try:
         manage_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[3]/div[2]/div[1]/div[2]""")
         manage_data = manage_info.text.strip()
         manage_data = manage_data.replace(",","")
+        # 공과금
+        if(manage_data.find("공과금") >= 0):
+            dues_data = "O"
+        else:
+            dues_data = "X"
+        # 고정 관리비
+        if(manage_data.find("만") >=0 ):
+            loc = manage_data.find("만")
+            manage_data = manage_data[0:loc+1]
+        else:
+            manage_data = ""
     except NoSuchElementException:
         manage_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[2]/div[1]/div[2]""")
         manage_data = manage_info.text.strip()
         manage_data = manage_data.replace(",","")
-    except NoSuchElementException:
-        manage_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[2]/div[1]/div[2]""")
-        manage_data = manage_info.text.strip()
-        manage_data = manage_data.replace(",","")
+        # 공과금
+        if(manage_data.find("공과금") >= 0):
+            dues_data = "O"
+        else:
+            dues_data = "X"
+        # 고정 관리비
+        if(manage_data.find("만") >=0 ):
+            loc = manage_data.find("만")
+            manage_data = manage_data[0:loc+1]
+        else:
+            manage_data = ""
     # 방 개수
     try:
         room_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[3]/div[2]/div[2]/div[2]""")
@@ -143,30 +155,149 @@ for item in detail_link_list:
         room_data = room_data.replace(",","").replace("<br/>","")
         max_len = len(room_data)
         loc = room_data.find("|")
+        # 방 개수
         myroom_data = room_data[0:loc]
-        washroom_data = room_data[loc+1:max_len]
+        # 화장실 개수
+        washroom_data = room_data[loc+1:max_len].replace("화장실","").replace(" ","")
     except NoSuchElementException:
         room_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[2]/div[2]/div[2]""")
         room_data = room_info.text.strip()
         room_data = room_data.replace(",","").replace("<br/>","")
         max_len = len(room_data)
         loc = room_data.find("|")
+        # 방 개수
         myroom_data = room_data[0:loc]
-        washroom_data = room_data[loc+1:max_len]
+        # 화장실 개수
+        washroom_data = room_data[loc+1:max_len].replace("화장실","").replace(" ","")
+    # 전용면적
+    try:
+        size_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[3]/div[2]/div[5]/div[2]""")
+        size_data = size_info.text.strip()
+        size_data = size_data.replace(",","")
+        if(size_data.find("공용")>=0 or size_data.find("주방")>=0):
+            size_data=""
     except NoSuchElementException:
-        room_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[2]/div[2]/div[2]""")
-        room_data = room_info.text.strip()
-        room_data = room_data.replace(",","").replace("<br/>","")
-        max_len = len(room_data)
-        loc = room_data.find("|")
-        myroom_data = room_data[0:loc]
-        washroom_data = room_data[max_len-1:max_len]
-
-    i += 1
-
+        size_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[2]/div[5]/div[2]""")
+        size_data = size_info.text.strip()
+        size_data = size_data.replace(",","")
+        if(size_data.find("공용")>=0 or size_data.find("주방")>=0):
+            size_data=""
+    # 제공시설
+    try:
+        facility_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[3]""")
+        facility_data = facility_info.text.strip()
+        # 쇼파, 와이파이, 에어컨, 세탁기, 건조대
+        if(facility_data.find("쇼파")>=0):
+            f_data1 = "O"
+        else:
+            f_data1 = "X"
+        if(facility_data.find("공유기")>=0):
+            f_data2 = "O"
+        else:
+            f_data2 = "X"
+        if(facility_data.find("에어컨")>=0):
+            f_data3 = "O"
+        else:
+            f_data3 = "X"
+        if(facility_data.find("세탁기")>=0):
+            f_data4 = "O"
+        else:
+            f_data4 = "X"
+        if(facility_data.find("건조대")>=0):
+            f_data5 = "O"
+        else:
+            f_data5 = "X"
+        # 청소기,전자레인지,냉장고,다리미,정수기
+        if(facility_data.find("청소기")>=0):
+            f_data6 = "O"
+        else:
+            f_data6 = "X"
+        if(facility_data.find("레인지")>=0):
+            f_data7 = "O"
+        else:
+            f_data7 = "X"
+        if(facility_data.find("냉장고")>=0):
+            f_data8 = "O"
+        else:
+            f_data8 = "X"
+        if(facility_data.find("다리미")>=0):
+            f_data9 = "O"
+        else:
+            f_data9 = "X"
+        if(facility_data.find("정수기")>=0):
+            f_data10 = "O"
+        else:
+            f_data10 = "X"
+         # 토스터기,전기포트
+        if(facility_data.find("토스터")>=0):
+            f_data11 = "O"
+        else:
+            f_data11 = "X"
+        if(facility_data.find("전기")>=0):
+            f_data12 = "O"
+        else:
+            f_data12 = "X"
+    except NoSuchElementException:
+        facility_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]""")
+        facility_data = facility_info.text.strip()
+        # 쇼파, 와이파이, 에어컨, 세탁기, 건조대
+        if(facility_data.find("쇼파")>=0):
+            f_data1 = "O"
+        else:
+            f_data1 = "X"
+        if(facility_data.find("공유기")>=0):
+            f_data2 = "O"
+        else:
+            f_data2 = "X"
+        if(facility_data.find("에어컨")>=0):
+            f_data3 = "O"
+        else:
+            f_data3 = "X"
+        if(facility_data.find("세탁기")>=0):
+            f_data4 = "O"
+        else:
+            f_data4 = "X"
+        if(facility_data.find("건조대")>=0):
+            f_data5 = "O"
+        else:
+            f_data5 = "X"
+        # 청소기,전자레인지,냉장고,다리미,정수기
+        if(facility_data.find("청소기")>=0):
+            f_data6 = "O"
+        else:
+            f_data6 = "X"
+        if(facility_data.find("레인지")>=0):
+            f_data7 = "O"
+        else:
+            f_data7 = "X"
+        if(facility_data.find("냉장고")>=0):
+            f_data8 = "O"
+        else:
+            f_data8 = "X"
+        if(facility_data.find("다리미")>=0):
+            f_data9 = "O"
+        else:
+            f_data9 = "X"
+        if(facility_data.find("정수기")>=0):
+            f_data10 = "O"
+        else:
+            f_data10 = "X"
+         # 토스터기,전기포트
+        if(facility_data.find("토스터")>=0):
+            f_data11 = "O"
+        else:
+            f_data11 = "X"
+        if(facility_data.find("전기")>=0):
+            f_data12 = "O"
+        else:
+            f_data12 = "X"
     # 파일에 내용을 입력
     f.write(house_name_data + "," + loc_data + "," + deposit_data + "," + month_data + "," +
-    manage_data + "," + myroom_data + "," + washroom_data + "\n")
+    manage_data + "," + dues_data + "," + myroom_data + "," + washroom_data + "," + size_data + "," + f_data1 + "," + f_data2 + ","
+    + f_data3 + "," + f_data4 + "," + f_data5 + "," + f_data6 + "," + f_data7 + "," + f_data8 + "," + f_data9 + ","
+    + f_data10 + "," + f_data11 + "," + f_data12 + "\n")
+
+    i += 1
 
 # 작업이 끝난 파일 닫음
 f.close()

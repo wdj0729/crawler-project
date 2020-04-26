@@ -60,7 +60,7 @@ for item in detail_link_list:
     try:
         brand = driver.find_element_by_xpath("""//*[@id="root"]/div[3]/div[2]/div[1]/div[2]/div/a["""+ str(i) +"""]/div/div[2]/span[2]""")
         brand_data = brand.text.strip()
-        if(brand_data.find("점") > 0):
+        if(brand_data.find("점") >= 0):
             fitem = brand_data.find("점")
             brand_data = brand_data[0:fitem+1]
         else:
@@ -70,11 +70,11 @@ for item in detail_link_list:
     try:
         room = driver.find_elements_by_xpath("""//*[@id="root"]/div[3]/div[2]/div[1]/div[2]/div/a["""+ str(i) +"""]/div/div[2]/div[1]/span""")
         room_data = room[0].text.strip()
-        if(room_data.find("여성") > 0):
+        if(room_data.find("여성") >= 0):
             room_data="여성전용"
-        elif(room_data.find("남성") > 0):
+        elif(room_data.find("남성") >= 0):
             room_data="남성전용"
-        elif(room_data.find("무관") > 0):
+        elif(room_data.find("무관") >= 0):
             room_data = "성별무관"
         else:
             pass
