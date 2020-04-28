@@ -38,7 +38,7 @@ while True:
 # test.csv파일을 쓰기모드(w)로 열기
 f = open("test.csv","w",encoding="UTF-8")
 # 헤더 추가하기
-f.write("매물명,성별전용,면적,보증금,월세,인실,만실,건물형태,방,화장실,층,전체면적,난방방식,"
+f.write("매물명,성별전용,면적(㎡),보증금(원),월세(원),인실,만실,건물형태,방(개),화장실(개),층,총층,전체면적(㎡),전체평수,난방방식,"
 "승강기,주차,반려동물,흡연,조리도구,식기류,전자레인지,전기포트,에어컨,정수기,"
 "세탁기,식탁,청소기,신발장,냉장고,와이파이,커피포트,수납함,청소서비스,의자,"
 "분리수거함,가스레인지,토스터,TV,소파,다리미,커튼,소독,전신거울,"
@@ -92,7 +92,7 @@ for item in detail_link_list:
         product_info_data = product_info.text.strip()
         max_len = len(product_info_data)
         loc = product_info_data.find(":")
-        product_info_data = product_info_data[loc+2:max_len]
+        product_info_data = product_info_data[loc+2:max_len].replace(",","").replace("\n","")
     except NoSuchElementException:
         pass
     # 하우스 정보
@@ -114,6 +114,10 @@ for item in detail_link_list:
             dt_data1 = "아파트"
         elif(detail_info_data.find("단독주택") >= 0):
             dt_data1 = "단독주택"
+        elif(detail_info_data.find("원룸") >= 0):
+            dt_data1 = "원룸"
+        elif(detail_info_data.find("오피스텔") >= 0):
+            dt_data1 = "오피스텔"
         elif(detail_info_data.find("기타") >= 0):
             dt_data1 = "기타"
         else:
@@ -121,43 +125,58 @@ for item in detail_link_list:
         # 방
         if(detail_info_data.find("방") >= 0):
             loc = detail_info_data.find("방")
-            dt_data2 = detail_info_data[loc+2:loc+4].strip('\n')
-            total_room = int(detail_info_data[loc+2:loc+3])
-            if(dt_data2.find("개")==-1):
-                dt_data2 += "개"
+            total_room_info = driver2.find_element_by_xpath("""//*[@id="blur-wrap"]/div[3]/div[2]/div[1]/section[1]/h5[2]""")
+            total_room = total_room_info.text.strip()
+            loc1 = total_room.find("(")
+            loc2 = total_room.find(")")
+            total_room = int(total_room[loc1:loc2].replace("(","").replace(")","").replace(" ",""))
+            dt_data2 = str(total_room)
         else:
             dt_data2 = ""
         # 화장실
         if(detail_info_data.find("화장실") >= 0):
             loc = detail_info_data.find("화장실")
-            dt_data3 = detail_info_data[loc+4:loc+6].strip('\n')
-            if(dt_data3.find("개")==-1):
-                dt_data3 += "개"
+            dt_data3 = detail_info_data[loc+3:loc+5].replace("\n","").replace(" ","")
         else:
             dt_data3 = ""
         # 층
-        if(detail_info_data.find("층") >= 0):
-            loc = detail_info_data.find("층")
-            dt_data4 = detail_info_data[loc+5:loc+8].strip('/')
+        if(detail_info_data.find("총층") >= 0):
+            loc = detail_info_data.find("총층")
+            dt_data4 = detail_info_data[loc+2:loc+5].replace("\n","").replace(" ","")
+            dt_data4 = dt_data4.replace("층","")
         else:
             dt_data4 = ""
-        # 면적
+        # 총층
+        if(detail_info_data.find("층/총층") >= 0):
+            loc = detail_info_data.find("층/총층")
+            dt_data11 = detail_info_data[loc+7:loc+10].replace("\n","").replace("/","")
+            dt_data11 = dt_data11.replace("층","")
+        else:
+            dt_data11 = ""
+        # 전체면적
         if(detail_info_data.find("㎡") >= 0):
             loc1 = detail_info_data.find("적")
             loc2 = detail_info_data.find("㎡")
-            dt_data5 = detail_info_data[loc1+2:loc2+1].strip('\n')
+            dt_data5 = detail_info_data[loc1+1:loc2].replace("\n","").replace(" ","")
         else :
             dt_data5 = ""
+        # 전체평수
+        if(detail_info_data.find("평") >= 0):
+            loc1 = detail_info_data.find("㎡")
+            loc2 = detail_info_data.find("평")
+            dt_data12 = detail_info_data[loc1+2:loc2].replace("\n","").replace(" ","")
+        else:
+            dt_data12 = ""
         # 난방방식
         if(detail_info_data.find("방식") >= 0):
             loc = detail_info_data.find("방식")
-            dt_data6 = detail_info_data[loc+3:loc+7].strip('\n')
+            dt_data6 = detail_info_data[loc+3:loc+7].replace("\n","")
         else:
             dt_data6 = ""
         # 승강기
         if(detail_info_data.find("승강기") >= 0):
             loc = detail_info_data.find("승강기")
-            dt_data7 = detail_info_data[loc+4:loc+6].strip('\n')
+            dt_data7 = detail_info_data[loc+4:loc+6].replace("\n","")
             if(dt_data7.find("알") >= 0 ):
                 dt_data7="알수없음"
         else:
@@ -165,7 +184,7 @@ for item in detail_link_list:
         # 주차
         if(detail_info_data.find("주차") >= 0):
             loc = detail_info_data.find("주차")
-            dt_data8 = detail_info_data[loc+3:loc+6].strip('\n')
+            dt_data8 = detail_info_data[loc+3:loc+6].replace("\n","")
             if(dt_data8.find("반") >= 0):
                 dt_data8=""
             elif(dt_data8.find("알") >= 0 ):
@@ -175,7 +194,7 @@ for item in detail_link_list:
         # 반려동물
         if(detail_info_data.find("동물") >= 0):
             loc = detail_info_data.find("동물")
-            dt_data9 = detail_info_data[loc+3:loc+6].strip('\n')
+            dt_data9 = detail_info_data[loc+3:loc+6].replace("\n","")
             if(dt_data9.find("흡") >= 0):
                 dt_data9=""
         else:
@@ -183,7 +202,7 @@ for item in detail_link_list:
         # 흡연
         if(detail_info_data.find("흡연") >= 0):
             loc = detail_info_data.find("흡연")
-            dt_data10 = detail_info_data[loc+3:loc+6].strip('\n')
+            dt_data10 = detail_info_data[loc+3:loc+6].replace("\n","")
             if(dt_data10.find("협") >= 0):
                 dt_data10="별도협의"
         else:
@@ -338,60 +357,69 @@ for item in detail_link_list:
         try:
             unit_room = driver2.find_element_by_xpath("""//*[@id="blur-wrap"]/div[3]/div[2]/div[1]/section[1]/div[""" + str(j) + """]""")
             unit_room_data = unit_room.text.strip()
+            unit_data5=""
+            unit_data6=""
             # 성별전용
             if(unit_room_data.find("여성") >= 0):
-                unit_data1 = "여성전용"
+                unit_data1 = "여"
             elif(unit_room_data.find("남성") >= 0):
-                unit_data1 = "남성전용"
+                unit_data1 = "남"
             elif(unit_room_data.find("무관") >= 0):
-                unit_data1 = "성별무관"
+                unit_data1 = "무"
             else:
                 pass
             # 면적
-            if(unit_room_data.find("(") >= 0):
+            if(unit_room_data.find("㎡") >= 0):
                 unit_loc1 = unit_room_data.find("(")
                 unit_loc2 = unit_room_data.find("㎡")
-                unit_data2 = unit_room_data[unit_loc1+1:unit_loc2+1].strip('\n')
+                unit_data2 = unit_room_data[unit_loc1+1:unit_loc2].replace("\n,","")
                 if(unit_data2.find(")") >= 0):
                     unit_loc3 = unit_data2.find(")")
-                    unit_data2 = unit_data2[unit_loc3+1:unit_loc2]
-                    unit_data2 = unit_data2.replace("(","")
+                    unit_data2 = unit_data2[unit_loc3+1:unit_loc2].replace("\n","").replace("(","")
                 unit_data2 = unit_data2.replace(" ","")
             else:
-                unit_data2=""
+                unit_data2 = ""
             # 보증금
             unit_loc = unit_room_data.find("/")
-            unit_data3 = unit_room_data[unit_loc-5:unit_loc-1].strip('\n')
-            unit_data3 = unit_data3.replace("월","").replace("\n","").replace(" ","")
-            unit_data3 += "만원"
-            # 월세
+            unit_data3 = unit_room_data[unit_loc-5:unit_loc-1].replace("\n","").replace("개","").replace("월","")
+            unit_data3 = unit_data3.replace(",","").replace(".","").replace(" ","")
+            if(unit_data3 == "0"):
+                unit_data3 = "0"
+            else:
+                unit_data3 += "0000"
+            #월세
             unit_loc2 = unit_room_data.find("만원")
-            unit_data4 = unit_room_data[unit_loc+1:unit_loc2+2].strip('\n')
-            unit_data4 = unit_data4.replace(" ","").replace('\n',"").replace(" ","")
+            unit_data4 = unit_room_data[unit_loc+1:unit_loc2].replace(" ","").replace("\n","")
+            unit_data4 = unit_data4.replace(",","").replace(".","")
+            if(unit_data4 == "0"):
+                unit_data4 = "0"
+            else:
+                unit_data4 += "0000"
             # 인실
-            unit_loc = unit_room_data.find("실")
-            unit_data5 = unit_room_data[unit_loc-2:unit_loc+1]
-            unit_data5 = unit_data5.replace('\n',"").replace(" ","")
+            unit_loc3 = unit_room_data.find("실")
+            unit_data5 = unit_room_data[unit_loc3-2:unit_loc3-1].replace("\n","").replace(" ","")
             # 만실
             if(unit_room_data.find("만실") >= 0):
                 unit_data6 = "O"
             else:
-                unit_data6 = "X"
+                unit_data6 = "X"  
         except:
             pass
 
         # 파일에 내용을 입력
         f.write(product_info_data + "," + 
-        unit_data1 + "," + unit_data2 + "," + unit_data3 + "," + unit_data4 + "," + unit_data5 + "," +  unit_data6 + "," +
-        dt_data1 + "," + dt_data2 + "," + dt_data3 + "," + dt_data4 + "," + dt_data5 + "," + 
-        dt_data6 + "," + dt_data7 + "," + dt_data8 + "," + dt_data9 + "," + dt_data10 + "," + 
+        unit_data1 + "," + unit_data2 + "," + unit_data3 + "," + unit_data4 + "," + unit_data5 + "," + unit_data6 + "," +
+        dt_data1 + "," + dt_data2 + "," + dt_data3 + "," + dt_data4 + "," + dt_data11 + "," +  
+        dt_data5 + "," + dt_data12 + "," + dt_data6 + "," + dt_data7 + "," + dt_data8 + "," + 
+        dt_data9 + "," + dt_data10 + "," + 
         op_data1 + "," + op_data2 + "," + op_data3 + "," + op_data4 + "," + op_data5 + "," + 
         op_data6 + "," + op_data7 + "," + op_data8 + "," + op_data9 + "," + op_data10 + ","+ 
         op_data11 + "," + op_data12 + "," + op_data13 + "," + op_data14 + "," + op_data15 + "," + 
         op_data16 + "," + op_data17 + "," + op_data18 + "," + op_data19 + "," + op_data20 + "," + 
         op_data21 + "," + op_data22 + "," + op_data23 + "," + op_data24 + "," + op_data25 + "," + 
         op_data26 + "," + op_data27 + "," + op_data28 + "," + op_data29 + "," + op_data30 + "," + 
-        op_data31 + "," + address_data + "\n")
+        op_data31 + "," + 
+        address_data + "\n")
 
         print(time()-detail_start)
 

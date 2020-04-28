@@ -45,7 +45,7 @@ while True:
 # test.csv파일을 쓰기모드(w)로 열기
 f = open("test.csv","w",encoding="UTF-8")
 # 헤더 추가하기
-f.write("매물명,지역,보증금,월임대료,고정관리비,공과금(1/N),방개수,화장실개수,전용면적,"
+f.write("매물명,지역,면적,보증금,월세,인실,만실,평균보증금,평균임대료,고정관리비,공과금(1/N),방개수,화장실개수,전용면적,"
 "쇼파,와이파이,에어컨,세탁기,건조대,청소기,전자레인지,냉장고,다리미,정수기,토스터기,전기포트")
 f.write("\n")
 
@@ -99,7 +99,7 @@ for item in detail_link_list:
     except NoSuchElementException:
         loc_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[1]/div[1]/div[2]/h1""")
         loc_data = loc_info.text.strip()
-    # 보증금
+    # 평균보증금
     try:
         deposit_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[3]/div[1]/div[2]/div[1]/h1""")
         deposit_data = deposit_info.text.strip()
@@ -108,7 +108,7 @@ for item in detail_link_list:
         deposit_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[1]/div[2]/div[1]/h1""")
         deposit_data = deposit_info.text.strip()
         deposit_data = deposit_data.replace(",","")
-    # 월임대료
+    # 평균임대료
     try:
         month_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[3]/div[1]/div[2]/div[2]/h1""")
         month_data = month_info.text.strip()
@@ -291,11 +291,63 @@ for item in detail_link_list:
             f_data12 = "O"
         else:
             f_data12 = "X"
-    # 파일에 내용을 입력
-    f.write(house_name_data + "," + loc_data + "," + deposit_data + "," + month_data + "," +
-    manage_data + "," + dues_data + "," + myroom_data + "," + washroom_data + "," + size_data + "," + f_data1 + "," + f_data2 + ","
-    + f_data3 + "," + f_data4 + "," + f_data5 + "," + f_data6 + "," + f_data7 + "," + f_data8 + "," + f_data9 + ","
-    + f_data10 + "," + f_data11 + "," + f_data12 + "\n")
+
+    # 각 방
+    try:
+        driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[4]/h1/span[1]""").click()
+    except:
+        print("Cannot click 전체방 보기")
+    j=1
+    for item in range(j,10):
+        try:
+            dt_room_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[4]/div[1]/table/tbody[""" +  str(j) + """]""")
+            dt_room_data = dt_room_info.text.strip()
+            # 면적
+            if(dt_room_data.find("㎡") >= 0):
+                dt_loc1 = dt_room_data.find("㎡")
+                dt_data1 = dt_room_data[dt_loc1-4:dt_loc1]
+            else:
+                dt_data1=""
+            # 보증금
+            try:
+                dt_data3_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[4]/div[1]/table/tbody[""" +  str(j) + """]/tr[1]/td[2]""")
+                dt_data2 = dt_data2_info.text.strip()
+            except:
+                dt_data2=""
+            # 월세
+            try:
+                dt_data3_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[4]/div[1]/table/tbody[""" +  str(j) + """]/tr[1]/td[3]""")
+                dt_data3 = dt_data3_info.text.strip()
+            except:
+                dt_data3=""
+            # 인실
+            if(dt_room_data.find("인실") >= 0):
+                dt_loc1 = dt_room_data.find("인실")
+                dt_data4 = dt_room_data[dt_loc1-1:dt_loc1+1]
+            else:
+                dt_data4=""
+            # 만실
+            if(dt_room_data.find("공실") >= 0):
+                dt_data5 = "X"
+            elif(dt_room_data.find("입주") >=0):
+                dt_data5 = "O"
+            else:
+                dt_data5=""
+
+             # 파일에 내용을 입력 면적,보증금,월세,인실,만실
+            f.write(house_name_data + "," + loc_data + "," +
+            dt_data1 + "," + dt_data2 + "," + dt_data3 + "," + dt_data4 + "," + dt_data5 + "," + 
+            deposit_data + "," + month_data + "," +
+            manage_data + "," + dues_data + "," +
+            myroom_data + "," + washroom_data + "," + 
+            size_data + "," + 
+            f_data1 + "," + f_data2 + "," + f_data3 + "," + f_data4 + "," + f_data5 + "," + 
+            f_data6 + "," + f_data7 + "," + f_data8 + "," + f_data9 + ","+ f_data10 + "," + 
+            f_data11 + "," + f_data12 + "\n")
+
+            j += 1
+        except:
+            break
 
     i += 1
 
