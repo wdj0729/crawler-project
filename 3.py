@@ -5,7 +5,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 from time import *
-import pickle
 from selenium.common.exceptions import *
 import csv
 
@@ -45,7 +44,7 @@ while True:
 # test.csv파일을 쓰기모드(w)로 열기
 f = open("test.csv","w",encoding="UTF-8")
 # 헤더 추가하기
-f.write("매물명,지역,면적,보증금,월세,인실,만실,평균보증금,평균임대료,고정관리비,공과금(1/N),방개수,화장실개수,전용면적,"
+f.write("매물명,지역,면적(㎡),보증금(원),월세(원),인실,만실,고정관리비(원),공과금(1/N),방(개),화장실(개),전용면적(㎡),"
 "쇼파,와이파이,에어컨,세탁기,건조대,청소기,전자레인지,냉장고,다리미,정수기,토스터기,전기포트")
 f.write("\n")
 
@@ -63,9 +62,9 @@ for house in house_lists_elem:
 # 중복 제거
 detail_link_list = list(set(detail_link_list))
 
-# content 담은 리스트 
-data_list = []
-
+# 크롤링 걸리는 시간
+listing_time=time()-start
+print(listing_time)
 #인덱스
 i=1
 
@@ -76,6 +75,7 @@ for item in detail_link_list:
     detail_start=time()
     print("주소:",item)
     print("인덱스:",i)
+    j=1
 
     # 컴앤스테이 상세페이지
     driver2.get(item)
@@ -84,7 +84,7 @@ for item in detail_link_list:
         EC.presence_of_element_located((By.ID, "root"))
     )
 
-    sleep(0.1)
+    sleep(0.5)
 
     # 매물명
     try:
@@ -99,24 +99,6 @@ for item in detail_link_list:
     except NoSuchElementException:
         loc_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[1]/div[1]/div[2]/h1""")
         loc_data = loc_info.text.strip()
-    # 평균보증금
-    try:
-        deposit_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[3]/div[1]/div[2]/div[1]/h1""")
-        deposit_data = deposit_info.text.strip()
-        deposit_data = deposit_data.replace(",","")
-    except NoSuchElementException:
-        deposit_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[1]/div[2]/div[1]/h1""")
-        deposit_data = deposit_info.text.strip()
-        deposit_data = deposit_data.replace(",","")
-    # 평균임대료
-    try:
-        month_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[3]/div[1]/div[2]/div[2]/h1""")
-        month_data = month_info.text.strip()
-        month_data = month_data.replace(",","")
-    except NoSuchElementException:
-        month_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[1]/div[2]/div[2]/h1""")
-        month_data = month_info.text.strip()
-        month_data = month_data.replace(",","")
     # 고정관리비/공과금
     try:
         manage_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[3]/div[2]/div[1]/div[2]""")
@@ -130,7 +112,8 @@ for item in detail_link_list:
         # 고정 관리비
         if(manage_data.find("만") >=0 ):
             loc = manage_data.find("만")
-            manage_data = manage_data[0:loc+1]
+            manage_data = manage_data[0:loc]
+            manage_data += "0000"
         else:
             manage_data = ""
     except NoSuchElementException:
@@ -145,7 +128,9 @@ for item in detail_link_list:
         # 고정 관리비
         if(manage_data.find("만") >=0 ):
             loc = manage_data.find("만")
-            manage_data = manage_data[0:loc+1]
+            manage_data = manage_data[0:loc]
+            manage_data = manage_data.replace("만","")
+            manage_data += "0000"
         else:
             manage_data = ""
     # 방 개수
@@ -156,9 +141,9 @@ for item in detail_link_list:
         max_len = len(room_data)
         loc = room_data.find("|")
         # 방 개수
-        myroom_data = room_data[0:loc]
+        myroom_data = ""
         # 화장실 개수
-        washroom_data = room_data[loc+1:max_len].replace("화장실","").replace(" ","")
+        washroom_data = room_data[loc+1:max_len-1].replace("화장실","").replace(" ","")
     except NoSuchElementException:
         room_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[2]/div[2]/div[2]""")
         room_data = room_info.text.strip()
@@ -166,20 +151,20 @@ for item in detail_link_list:
         max_len = len(room_data)
         loc = room_data.find("|")
         # 방 개수
-        myroom_data = room_data[0:loc]
+        myroom_data = ""
         # 화장실 개수
-        washroom_data = room_data[loc+1:max_len].replace("화장실","").replace(" ","")
+        washroom_data = room_data[loc+1:max_len-1].replace("화장실","").replace(" ","")
     # 전용면적
     try:
         size_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[3]/div[2]/div[5]/div[2]""")
         size_data = size_info.text.strip()
-        size_data = size_data.replace(",","")
+        size_data = size_data.replace(",","").replace("㎡","")
         if(size_data.find("공용")>=0 or size_data.find("주방")>=0):
             size_data=""
     except NoSuchElementException:
         size_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[2]/div[5]/div[2]""")
         size_data = size_info.text.strip()
-        size_data = size_data.replace(",","")
+        size_data = size_data.replace(",","").replace("㎡","")
         if(size_data.find("공용")>=0 or size_data.find("주방")>=0):
             size_data=""
     # 제공시설
@@ -292,38 +277,51 @@ for item in detail_link_list:
         else:
             f_data12 = "X"
 
-    # 각 방
+    # 전체방 보기 클릭
     try:
-        driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[4]/h1/span[1]""").click()
+        driver2.find_element_by_xpath("""//span[contains(.,'전체방 보기')]""").click()
     except:
-        print("Cannot click 전체방 보기")
-    j=1
-    for item in range(j,10):
+        pass
+    
+    try:
+        table = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[4]/div[1]/table""")
+    except:
+        table = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[4]/div[1]/table""")
+
+    tr = table.find_elements_by_class_name("all_room")
+
+    print(len(tr))
+
+    for item2 in range(0,len(tr)):
         try:
             dt_room_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[4]/div[1]/table/tbody[""" +  str(j) + """]""")
             dt_room_data = dt_room_info.text.strip()
             # 면적
             if(dt_room_data.find("㎡") >= 0):
                 dt_loc1 = dt_room_data.find("㎡")
-                dt_data1 = dt_room_data[dt_loc1-4:dt_loc1]
+                dt_data1 = dt_room_data[dt_loc1-4:dt_loc1].replace(" ","")
             else:
                 dt_data1=""
             # 보증금
             try:
-                dt_data3_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[4]/div[1]/table/tbody[""" +  str(j) + """]/tr[1]/td[2]""")
+                dt_data2_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[4]/div[1]/table/tbody[""" +  str(j) + """]/tr[1]/td[2]""")
                 dt_data2 = dt_data2_info.text.strip()
+                dt_data2 = dt_data2.replace("만","").replace(",","")
+                dt_data2 += "0000"
             except:
                 dt_data2=""
             # 월세
             try:
                 dt_data3_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[5]/div[4]/div[1]/table/tbody[""" +  str(j) + """]/tr[1]/td[3]""")
                 dt_data3 = dt_data3_info.text.strip()
+                dt_data3 = dt_data3.replace("만","")
+                dt_data3 += "0000"
             except:
                 dt_data3=""
             # 인실
             if(dt_room_data.find("인실") >= 0):
                 dt_loc1 = dt_room_data.find("인실")
-                dt_data4 = dt_room_data[dt_loc1-1:dt_loc1+1]
+                dt_data4 = dt_room_data[dt_loc1-1:dt_loc1]
             else:
                 dt_data4=""
             # 만실
@@ -334,10 +332,9 @@ for item in detail_link_list:
             else:
                 dt_data5=""
 
-             # 파일에 내용을 입력 면적,보증금,월세,인실,만실
+             # 파일에 내용을 입력
             f.write(house_name_data + "," + loc_data + "," +
             dt_data1 + "," + dt_data2 + "," + dt_data3 + "," + dt_data4 + "," + dt_data5 + "," + 
-            deposit_data + "," + month_data + "," +
             manage_data + "," + dues_data + "," +
             myroom_data + "," + washroom_data + "," + 
             size_data + "," + 
@@ -345,9 +342,61 @@ for item in detail_link_list:
             f_data6 + "," + f_data7 + "," + f_data8 + "," + f_data9 + ","+ f_data10 + "," + 
             f_data11 + "," + f_data12 + "\n")
 
+            print(time()-detail_start)
+
             j += 1
         except:
-            break
+            dt_room_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[4]/div[1]/table/tbody[""" +  str(j) + """]""")
+            dt_room_data = dt_room_info.text.strip()
+            # 면적
+            if(dt_room_data.find("㎡") >= 0):
+                dt_loc1 = dt_room_data.find("㎡")
+                dt_data1 = dt_room_data[dt_loc1-4:dt_loc1].replace(" ","")
+            else:
+                dt_data1=""
+            # 보증금
+            try:
+                dt_data2_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[4]/div[1]/table/tbody[""" +  str(j) + """]/tr[1]/td[2]""")
+                dt_data2 = dt_data2_info.text.strip()
+                dt_data2 = dt_data2.replace("만","")
+                dt_data2 += "0000"
+            except:
+                dt_data2=""
+            # 월세
+            try:
+                dt_data3_info = driver2.find_element_by_xpath("""//*[@id="root"]/div/div[3]/div[1]/div/div[4]/div[4]/div[4]/div[1]/table/tbody[""" +  str(j) + """]/tr[1]/td[3]""")
+                dt_data3 = dt_data3_info.text.strip()
+                dt_data3 = dt_data3.replace("만","")
+                dt_data3 += "0000"
+            except:
+                dt_data3=""
+            # 인실
+            if(dt_room_data.find("인실") >= 0):
+                dt_loc1 = dt_room_data.find("인실")
+                dt_data4 = dt_room_data[dt_loc1-1:dt_loc1]
+            else:
+                dt_data4=""
+            # 만실
+            if(dt_room_data.find("공실") >= 0):
+                dt_data5 = "X"
+            elif(dt_room_data.find("입주") >=0):
+                dt_data5 = "O"
+            else:
+                dt_data5=""
+
+             # 파일에 내용을 입력
+            f.write(house_name_data + "," + loc_data + "," +
+            dt_data1 + "," + dt_data2 + "," + dt_data3 + "," + dt_data4 + "," + dt_data5 + "," + 
+            manage_data + "," + dues_data + "," +
+            myroom_data + "," + washroom_data + "," + 
+            size_data + "," + 
+            f_data1 + "," + f_data2 + "," + f_data3 + "," + f_data4 + "," + f_data5 + "," + 
+            f_data6 + "," + f_data7 + "," + f_data8 + "," + f_data9 + ","+ f_data10 + "," + 
+            f_data11 + "," + f_data12 + "\n")
+
+            print(time()-detail_start)
+
+            j += 1
 
     i += 1
 
