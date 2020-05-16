@@ -54,6 +54,10 @@ try:
     detail_link_list.remove("https://sharekim.com/detail/3540")
 except ValueError:
     pass
+try:
+    detail_link_list.remove("https://sharekim.com/detail/4706")
+except ValueError:
+    pass
 
 # 크롤링 걸리는 시간
 listing_time=time()-start
@@ -63,6 +67,11 @@ house_id = 1
 
 driver2 = webdriver.Chrome(path)
 driver2.maximize_window()
+
+driver3 = webdriver.Chrome(path)
+driver3.maximize_window()
+
+driver3.get("http://www.juso.go.kr/support/AddressMainSearch.do?searchType=TOTAL")
 
 # 지점 리스트
 house_list = []
@@ -158,6 +167,46 @@ for item in detail_link_list:
         # 도로명주소
         address = driver2.find_element_by_xpath("""//*[@id="blur-wrap"]/div[3]/div[2]/div[1]/section[2]/p""")
         road_address = address.text.strip()
+
+        driver3.find_element_by_xpath("""//*[@id="keyword"]""").clear()
+
+        driver3.find_element_by_xpath("""//*[@id="keyword"]""").send_keys(road_address)
+        driver3.find_element_by_xpath("""//*[@id="searchButton"]""").click()
+
+        district=""
+        building=""
+        building_data=""
+
+        building_info = driver3.find_element_by_xpath("""//*[@id="list1"]/div[2]/span[2]""")
+        building_data = building_info.text.strip()
+
+        # 자치구
+        if(building_data.find("구로구") >= 0):
+            loc1 = building_data.find("구로구")
+            district = "구로구"
+            building = "구로동"
+        elif(building_data.find("구") >= 0):
+            loc1 = building_data.find("구")
+            district = building_data[loc1-3:loc1+1].replace("시","").replace("별","").replace(" ","")
+            # 동
+            if(building_data.find("동") >= 0):
+                building = building_data[loc1+2:loc1+6].replace(" ","").replace("1","").replace("2","")
+                building = building.replace("3","").replace("4","").replace("5","")
+                building = building.replace("6","").replace("7","").replace("8","")
+                building = building.replace("9","").replace("0","")
+            else:
+                building=""
+        else:
+            district=""
+            # 동
+            if(building_data.find("동") >= 0):
+                building = building_data[loc1+2:loc1+6].replace(" ","").replace("1","").replace("2","")
+                building = building.replace("3","").replace("4","").replace("5","")
+                building = building.replace("6","").replace("7","").replace("8","")
+                building = building.replace("9","").replace("0","")
+            else:
+                building=""
+
     except NoSuchElementException:
         pass
     # 입주 상담 성별전용,면적,보증금,월세,인실,만실
@@ -208,6 +257,8 @@ for item in detail_link_list:
             # 인실
             unit_loc3 = unit_room_data.find("실")
             room_for = int(unit_room_data[unit_loc3-2:unit_loc3-1].replace("\n","").replace(" ",""))
+            # 침대 개수
+            bed_cnt = room_for
             # 만실
             if(unit_room_data.find("만실") >= 0):
                 is_full = "T"
@@ -218,8 +269,8 @@ for item in detail_link_list:
 
         dic = [{'house_name': house_name, 'gender': gender, 'house_area': house_area, 'house_type': house_type,
         'room_cnt': room_cnt, 'washroom_cnt': washroom_cnt, 'now_floor': now_floor, 'total_floor': total_floor,
-        'road_address': road_address, 
-        'rooms':[{'room_area': room_area, 'room_for':room_for,
+        'road_address': road_address, 'district': district, 'building': building,
+        'rooms':[{'room_area': room_area, 'room_for':room_for, 'bed_cnt': bed_cnt,
         'beds':[{'is_full': is_full, 'deposit': deposit, 'monthly_rent':monthly_rent}]}]}]
 
         print(dic)
@@ -233,6 +284,7 @@ for item in detail_link_list:
     house_id += 1
 
 # 브라우저 종료
+driver3.close()
 driver2.close()
 driver.close()
 
