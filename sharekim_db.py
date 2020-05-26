@@ -196,6 +196,8 @@ for item in detail_link_list:
                 building = building.replace("3", "").replace("4", "").replace("5", "")
                 building = building.replace("6", "").replace("7", "").replace("8", "")
                 building = building.replace("9", "").replace("0", "")
+                if building == "필동가":
+                    building = "필동"
             else:
                 building = ""
         else:
@@ -206,6 +208,8 @@ for item in detail_link_list:
                 building = building.replace("3", "").replace("4", "").replace("5", "")
                 building = building.replace("6", "").replace("7", "").replace("8", "")
                 building = building.replace("9", "").replace("0", "")
+                if building == "필동가":
+                    building = "필동"
             else:
                 building = ""
 
@@ -285,10 +289,10 @@ for item in detail_link_list:
             # 침대 개수
             bed_cnt = room_for
             # 만실
-            if unit_room_data.find("만실") >= 0:
-                is_full = "T"
-            else:
+            if unit_room_data.find("즉시입주") >= 0:
                 is_full = "F"
+            else:
+                is_full = "T"
 
             # 방 이름
             room_section_elem = driver2.find_element_by_xpath(
@@ -327,17 +331,39 @@ for item in detail_link_list:
 
             try:
                 badge_span_elem = bed.find_elements_by_tag_name('span')[1]
+                print(badge_span_elem.text)
+                # div 예외처리
+                if badge_span_elem.text == "상세설명" :
+                    badge_span_elem = bed.find_elements_by_tag_name('span')[4]
+                    # 만실
+                    if badge_span_elem.text == "만실":
+                        is_full = True
+                    else:
+                        is_full = False
 
-                if badge_span_elem.text == "만실":
-                    is_full = True
-                else:
-                    is_full = False
-
-                rentFee_elem = bed.find_elements_by_tag_name('span')[3]
-                rentFee = str(rentFee_elem.text)[:str(rentFee_elem.text).find('만원')].split('/')
-                deposit = rentFee[0].strip()
-                monthly_rent = rentFee[1].strip()
-                bed_sql_data = [is_full, deposit, monthly_rent, house_name, room_name]
+                    rentFee_elem = bed.find_elements_by_tag_name('span')[6]
+                    print(rentFee_elem.text)
+                    rentFee = str(rentFee_elem.text)[:str(rentFee_elem.text).find('만원')].split('/')
+                    # 보증금
+                    deposit = rentFee[0].strip()
+                    # 월세
+                    monthly_rent = rentFee[1].strip()
+                    bed_sql_data = [is_full, deposit, monthly_rent, house_name, room_name]
+                else :
+                    # 만실
+                    if badge_span_elem.text == "만실":
+                        is_full = True
+                    else:
+                        is_full = False
+                    
+                    rentFee_elem = bed.find_elements_by_tag_name('span')[3]
+                    print(rentFee_elem.text)
+                    rentFee = str(rentFee_elem.text)[:str(rentFee_elem.text).find('만원')].split('/')
+                    # 보증금
+                    deposit = rentFee[0].strip()
+                    # 월세
+                    monthly_rent = rentFee[1].strip()
+                    bed_sql_data = [is_full, deposit, monthly_rent, house_name, room_name]
             except Exception as e:
                 _, _, tb = sys.exc_info()
                 print('error line No = {}'.format(tb.tb_lineno))
@@ -367,7 +393,3 @@ for item in detail_link_list:
 driver3.close()
 driver2.close()
 driver.close()
-
-# 파일 쓰기
-with open("sharekim.pickle", "wb") as fw:
-    pickle.dump(house_list, fw)
