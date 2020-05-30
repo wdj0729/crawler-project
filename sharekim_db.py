@@ -184,17 +184,8 @@ for item in detail_link_list:
 
         # 구로구일 경우
         if building_data.find("구로구") >= 0:
-            loc1 = building_data.find("구로구")
             district = "구로구"
             building = "구로동"
-            # 동
-            if building_data.find("동") >= 0:
-                building = building_data[loc1 + 2:loc1 + 6].replace(" ", "").replace("1", "").replace("2", "")
-                building = building.replace("3", "").replace("4", "").replace("5", "")
-                building = building.replace("6", "").replace("7", "").replace("8", "")
-                building = building.replace("9", "").replace("0", "")
-            else:
-                building = ""
         # 구 찾으면
         elif building_data.find("구") >= 0:
             loc1 = building_data.find("구")
@@ -211,27 +202,24 @@ for item in detail_link_list:
             else:
                 building = ""
         # 구 못 찾을 경우
-        else:
+        else :
             district = ""
-            # 동
-            if building_data.find("동") >= 0:
-                building = building_data[loc1 + 2:loc1 + 6].replace(" ", "").replace("1", "").replace("2", "")
-                building = building.replace("3", "").replace("4", "").replace("5", "")
-                building = building.replace("6", "").replace("7", "").replace("8", "")
-                building = building.replace("9", "").replace("0", "")
-                # 필동가 -> 필동
-                if building == "필동가":
-                    building = "필동"
-            else:
-                building = ""
+            building = ""
 
     except NoSuchElementException:
+        loc1 = road_address.find("구")
+        district = road_address[loc1-3:loc1 +1].replace("시", "").replace("별", "").replace(" ", "")
+        loc2 = road_address.find("동")
+        building = road_address[loc2-3:loc2 +1].replace(" ", "").replace("1", "").replace("2", "")
+        building = building.replace("3", "").replace("4", "").replace("5", "")
+        building = building.replace("6", "").replace("7", "").replace("8", "")
+        building = building.replace("9", "").replace("0", "")
         pass
     
     # 경기도, 인천시 제외
     if road_address.find("경기") >=0:
         pass
-    if road_address.find("인천") >=0:
+    elif road_address.find("인천") >=0:
         pass
     # 서울시
     else:
