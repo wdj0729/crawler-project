@@ -182,11 +182,11 @@ for item in detail_link_list:
         building_info = driver3.find_element_by_xpath("""//*[@id="list1"]/div[2]/span[2]""")
         building_data = building_info.text.strip()
 
-        # 자치구
+        # 구로구일 경우
         if building_data.find("구로구") >= 0:
-            loc1 = building_data.find("구로구")
             district = "구로구"
             building = "구로동"
+        # 구 찾으면
         elif building_data.find("구") >= 0:
             loc1 = building_data.find("구")
             district = building_data[loc1 - 3:loc1 + 1].replace("시", "").replace("별", "").replace(" ", "")
@@ -196,178 +196,207 @@ for item in detail_link_list:
                 building = building.replace("3", "").replace("4", "").replace("5", "")
                 building = building.replace("6", "").replace("7", "").replace("8", "")
                 building = building.replace("9", "").replace("0", "")
+                # 필동가 -> 필동
+                if building == "필동가":
+                    building = "필동"
             else:
                 building = ""
-        else:
+        # 구 못 찾을 경우
+        else :
             district = ""
-            # 동
-            if building_data.find("동") >= 0:
-                building = building_data[loc1 + 2:loc1 + 6].replace(" ", "").replace("1", "").replace("2", "")
-                building = building.replace("3", "").replace("4", "").replace("5", "")
-                building = building.replace("6", "").replace("7", "").replace("8", "")
-                building = building.replace("9", "").replace("0", "")
-            else:
-                building = ""
+            building = ""
 
     except NoSuchElementException:
+        loc1 = road_address.find("구")
+        district = road_address[loc1-3:loc1 +1].replace("시", "").replace("별", "").replace(" ", "")
+        loc2 = road_address.find("동")
+        building = road_address[loc2-3:loc2 +1].replace(" ", "").replace("1", "").replace("2", "")
+        building = building.replace("3", "").replace("4", "").replace("5", "")
+        building = building.replace("6", "").replace("7", "").replace("8", "")
+        building = building.replace("9", "").replace("0", "")
         pass
+    
+    # 경기도, 인천시 제외
+    if road_address.find("경기") >=0:
+        pass
+    elif road_address.find("인천") >=0:
+        pass
+    # 서울시
+    else:
+        # SQL문 및 Placeholer data
+        insert_into_house_SQL = """insert into sharehouse.houses 
+        (house_name, area, house_type, room_cnt,washroom_cnt, now_floor, total_floor, road_address, district, building)
+            values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
 
-    # SQL문 및 Placeholer data
-    insert_into_house_SQL = """insert into sharehouse.houses 
-    (house_name, area, house_type, room_cnt,washroom_cnt, now_floor, total_floor, road_address, district, building)
-          values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
+        insert_into_room_SQL = """
+        insert into sharehouse.rooms (room_name, gender, bed_cnt, area, house_id) 
+        values (%s, %s, %s, %s, (select id from houses where house_name = %s));
+        """
 
-    insert_into_room_SQL = """
-    insert into sharehouse.rooms (room_name, gender, bed_cnt, area, house_id) 
-    values (%s, %s, %s, %s, (select id from houses where house_name = %s));
-    """
+        insert_into_bed_SQL = """
+        insert into sharehouse.beds (is_full, deposit, monthly_rent, room_id) 
+        values (%s, %s, %s, (select id from rooms where house_id=(select id from houses where house_name=%s) and room_name=%s));
+        """
 
-    insert_into_bed_SQL = """
-    insert into sharehouse.beds (is_full, deposit, monthly_rent, room_id) 
-    values (%s, %s, %s, (select id from rooms where house_id=(select id from houses where house_name=%s) and room_name=%s));
-    """
+        house_sql_data = [house_name, house_area, house_type, room_cnt, washroom_cnt, now_floor, total_floor, road_address,
+                        district, building]
 
-    house_sql_data = [house_name, house_area, house_type, room_cnt, washroom_cnt, now_floor, total_floor, road_address,
-                      district, building]
-
-    # db커넥터 연결
-    try:
-        shareHouse_db = pymysql.connect(user='root', passwd='1234', host='localhost', db='sharehouse', charset='utf8')
-        cursor = shareHouse_db.cursor(pymysql.cursors.DictCursor)
-
-        cursor.execute(insert_into_house_SQL, house_sql_data)
-        shareHouse_db.commit()
-        print("successful house_data insertion")
-        print(house_sql_data)
-        print("-----------------------------")
-    except Exception as e:
-        _, _, tb = sys.exc_info()
-        print('error line No = {}'.format(tb.tb_lineno))
-        print(e)
-        print(house_sql_data)
-    finally:
-        shareHouse_db.close()
-
-    # 입주 상담 성별전용,면적,보증금,월세,인실,만실
-    for i in range(0, total_room):
-
+        # db커넥터 연결
         try:
-            unit_room = driver2.find_element_by_xpath(
-                """//*[@id="blur-wrap"]/div[3]/div[2]/div[1]/section[1]/div[""" + str(j) + """]""")
-            unit_room_data = unit_room.text.strip()
-            room_for = 1
-
-            is_full = "F"
-            # 성별전용
-            if unit_room_data.find("여성") >= 0:
-                gender = "F"
-            elif unit_room_data.find("남성") >= 0:
-                gender = "M"
-            elif unit_room_data.find("무관") >= 0:
-                gender = "N"
-            else:
-                gender = "N"
-            # 면적
-            if unit_room_data.find("㎡") >= 0:
-                unit_loc1 = unit_room_data.find("(")
-                unit_loc2 = unit_room_data.find("㎡")
-                room_area = unit_room_data[unit_loc1 + 1:unit_loc2].replace("\n,", "")
-                if room_area.find(")") >= 0:
-                    unit_loc3 = room_area.find(")")
-                    room_area = room_area[unit_loc3 + 1:unit_loc2].replace("\n", "").replace("(", "")
-                room_area = float(room_area.replace(" ", ""))
-            else:
-                room_area = None
-
-            # 인실
-            unit_loc3 = unit_room_data.find("실")
-            room_for = int(unit_room_data[unit_loc3 - 2:unit_loc3 - 1].replace("\n", "").replace(" ", ""))
-            # 침대 개수
-            bed_cnt = room_for
-            # 만실
-            if unit_room_data.find("만실") >= 0:
-                is_full = "T"
-            else:
-                is_full = "F"
-
-            # 방 이름
-            room_section_elem = driver2.find_element_by_xpath(
-                """//*[@id="blur-wrap"]/div[3]/div[2]/div[1]/section[1]""")
-            unit_select_items_elem = room_section_elem.find_elements_by_class_name("UnitSelctItem")
-
-            room_name = unit_select_items_elem[i].find_elements_by_tag_name("span")[0].text
-            room_sql_data = [room_name, gender, bed_cnt, room_area, house_name]
-
-            bed_label_elems = unit_select_items_elem[i].find_elements_by_tag_name("label")
-
-        except Exception as e:
-            _, _, tb = sys.exc_info()
-            print('error line No = {}'.format(tb.tb_lineno))
-            print(e)
-
-        try:
-            shareHouse_db = pymysql.connect(user='root', passwd='1234', host='localhost', db='sharehouse',
-                                            charset='utf8')
+            shareHouse_db = pymysql.connect(user='root', passwd='1234', host='localhost', db='sharehouse', charset='utf8')
             cursor = shareHouse_db.cursor(pymysql.cursors.DictCursor)
-            cursor.execute(insert_into_room_SQL, room_sql_data)
+
+            cursor.execute(insert_into_house_SQL, house_sql_data)
             shareHouse_db.commit()
-            print("successful room_data insertion")
-            print(room_sql_data)
+            print("successful house_data insertion")
+            print(house_sql_data)
             print("-----------------------------")
         except Exception as e:
             _, _, tb = sys.exc_info()
             print('error line No = {}'.format(tb.tb_lineno))
             print(e)
-            print(room_sql_data)
+            print(house_sql_data)
         finally:
             shareHouse_db.close()
 
-        # 각 침대 만실, 보증금, 월세
-        for bed in bed_label_elems:
+        # 입주 상담 성별전용,면적,보증금,월세,인실,만실
+        for i in range(0, total_room):
 
             try:
-                badge_span_elem = bed.find_elements_by_tag_name('span')[1]
+                unit_room = driver2.find_element_by_xpath(
+                    """//*[@id="blur-wrap"]/div[3]/div[2]/div[1]/section[1]/div[""" + str(j) + """]""")
+                unit_room_data = unit_room.text.strip()
+                room_for = 1
 
-                if badge_span_elem.text == "만실":
-                    is_full = True
+                is_full = "F"
+                # 성별전용
+                if unit_room_data.find("여성") >= 0:
+                    gender = "F"
+                elif unit_room_data.find("남성") >= 0:
+                    gender = "M"
+                elif unit_room_data.find("무관") >= 0:
+                    gender = "N"
                 else:
-                    is_full = False
+                    gender = "N"
+                # 면적
+                if unit_room_data.find("㎡") >= 0:
+                    unit_loc1 = unit_room_data.find("(")
+                    unit_loc2 = unit_room_data.find("㎡")
+                    room_area = unit_room_data[unit_loc1 + 1:unit_loc2].replace("\n,", "")
+                    if room_area.find(")") >= 0:
+                        unit_loc3 = room_area.find(")")
+                        room_area = room_area[unit_loc3 + 1:unit_loc2].replace("\n", "").replace("(", "")
+                    room_area = float(room_area.replace(" ", ""))
+                else:
+                    room_area = None
 
-                rentFee_elem = bed.find_elements_by_tag_name('span')[3]
-                rentFee = str(rentFee_elem.text)[:str(rentFee_elem.text).find('만원')].split('/')
-                deposit = rentFee[0].strip()
-                monthly_rent = rentFee[1].strip()
-                bed_sql_data = [is_full, deposit, monthly_rent, house_name, room_name]
+                # 인실
+                unit_loc3 = unit_room_data.find("실")
+                room_for = int(unit_room_data[unit_loc3 - 2:unit_loc3 - 1].replace("\n", "").replace(" ", ""))
+                # 침대 개수
+                bed_cnt = room_for
+                # 만실
+                if unit_room_data.find("즉시입주") >= 0:
+                    is_full = "F"
+                else:
+                    is_full = "T"
+
+                # 방 이름
+                room_section_elem = driver2.find_element_by_xpath(
+                    """//*[@id="blur-wrap"]/div[3]/div[2]/div[1]/section[1]""")
+                unit_select_items_elem = room_section_elem.find_elements_by_class_name("UnitSelctItem")
+
+                room_name = unit_select_items_elem[i].find_elements_by_tag_name("span")[0].text
+                room_sql_data = [room_name, gender, bed_cnt, room_area, house_name]
+
+                bed_label_elems = unit_select_items_elem[i].find_elements_by_tag_name("label")
+
             except Exception as e:
                 _, _, tb = sys.exc_info()
                 print('error line No = {}'.format(tb.tb_lineno))
-                print(bed_sql_data)
                 print(e)
 
             try:
                 shareHouse_db = pymysql.connect(user='root', passwd='1234', host='localhost', db='sharehouse',
                                                 charset='utf8')
                 cursor = shareHouse_db.cursor(pymysql.cursors.DictCursor)
-                cursor.execute(insert_into_bed_SQL, bed_sql_data)
+                cursor.execute(insert_into_room_SQL, room_sql_data)
                 shareHouse_db.commit()
-                print("successful bed_data insertion")
-                print(bed_sql_data)
+                print("successful room_data insertion")
+                print(room_sql_data)
                 print("-----------------------------")
             except Exception as e:
-                print(bed_sql_data)
+                _, _, tb = sys.exc_info()
+                print('error line No = {}'.format(tb.tb_lineno))
                 print(e)
+                print(room_sql_data)
             finally:
                 shareHouse_db.close()
 
-        j += 1
+            # 각 침대 만실, 보증금, 월세
+            for bed in bed_label_elems:
 
-    house_id += 1
+                try:
+                    badge_span_elem = bed.find_elements_by_tag_name('span')[1]
+                    print(badge_span_elem.text)
+                    # div 예외처리
+                    if badge_span_elem.text == "상세설명" :
+                        badge_span_elem = bed.find_elements_by_tag_name('span')[4]
+                        # 만실
+                        if badge_span_elem.text == "만실":
+                            is_full = True
+                        else:
+                            is_full = False
+
+                        rentFee_elem = bed.find_elements_by_tag_name('span')[6]
+                        print(rentFee_elem.text)
+                        rentFee = str(rentFee_elem.text)[:str(rentFee_elem.text).find('만원')].split('/')
+                        # 보증금
+                        deposit = rentFee[0].strip()
+                        # 월세
+                        monthly_rent = rentFee[1].strip()
+                        bed_sql_data = [is_full, deposit, monthly_rent, house_name, room_name]
+                    else :
+                        # 만실
+                        if badge_span_elem.text == "만실":
+                            is_full = True
+                        else:
+                            is_full = False
+                        
+                        rentFee_elem = bed.find_elements_by_tag_name('span')[3]
+                        print(rentFee_elem.text)
+                        rentFee = str(rentFee_elem.text)[:str(rentFee_elem.text).find('만원')].split('/')
+                        # 보증금
+                        deposit = rentFee[0].strip()
+                        # 월세
+                        monthly_rent = rentFee[1].strip()
+                        bed_sql_data = [is_full, deposit, monthly_rent, house_name, room_name]
+                except Exception as e:
+                    _, _, tb = sys.exc_info()
+                    print('error line No = {}'.format(tb.tb_lineno))
+                    print(bed_sql_data)
+                    print(e)
+
+                try:
+                    shareHouse_db = pymysql.connect(user='root', passwd='1234', host='localhost', db='sharehouse',
+                                                    charset='utf8')
+                    cursor = shareHouse_db.cursor(pymysql.cursors.DictCursor)
+                    cursor.execute(insert_into_bed_SQL, bed_sql_data)
+                    shareHouse_db.commit()
+                    print("successful bed_data insertion")
+                    print(bed_sql_data)
+                    print("-----------------------------")
+                except Exception as e:
+                    print(bed_sql_data)
+                    print(e)
+                finally:
+                    shareHouse_db.close()
+
+            j += 1
+
+        house_id += 1
 
 # 브라우저 종료
 driver3.close()
 driver2.close()
 driver.close()
-
-# 파일 쓰기
-with open("sharekim.pickle", "wb") as fw:
-    pickle.dump(house_list, fw)
