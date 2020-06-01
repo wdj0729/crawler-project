@@ -171,10 +171,11 @@ for item in detail_link_list:
         road_address = address.text.strip()
 
         driver3.find_element_by_xpath("""//*[@id="keyword"]""").clear()
-
         driver3.find_element_by_xpath("""//*[@id="keyword"]""").send_keys(road_address)
+        # 클릭이 안되는 에러 방지
+        sleep(0.1)
         driver3.find_element_by_xpath("""//*[@id="searchButton"]""").click()
-
+        
         district = None
         building = None
         building_data = None
@@ -225,7 +226,7 @@ for item in detail_link_list:
     else:
         # SQL문 및 Placeholer data
         insert_into_house_SQL = """insert into sharehouse.houses 
-        (house_name, area, house_type, room_cnt,washroom_cnt, now_floor, total_floor, road_address, district, building)
+        (house_name, area, house_type, room_cnt, washroom_cnt, now_floor, total_floor, road_address, district, building)
             values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
 
         insert_into_room_SQL = """
