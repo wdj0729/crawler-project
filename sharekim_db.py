@@ -119,7 +119,7 @@ for item in detail_link_list:
         elif detail_info_data.find("기타") >= 0:
             house_type = "etc"
         else:
-            house_type = "NULL"
+            house_type = None
         # 방
         if detail_info_data.find("방") >= 0:
             loc = detail_info_data.find("방")
@@ -175,9 +175,9 @@ for item in detail_link_list:
         driver3.find_element_by_xpath("""//*[@id="keyword"]""").send_keys(road_address)
         driver3.find_element_by_xpath("""//*[@id="searchButton"]""").click()
 
-        district = ""
-        building = ""
-        building_data = ""
+        district = None
+        building = None
+        building_data = None
 
         building_info = driver3.find_element_by_xpath("""//*[@id="list1"]/div[2]/span[2]""")
         building_data = building_info.text.strip()
@@ -200,11 +200,11 @@ for item in detail_link_list:
                 if building == "필동가":
                     building = "필동"
             else:
-                building = ""
+                building = None
         # 구 못 찾을 경우
         else :
-            district = ""
-            building = ""
+            district = None
+            building = None
 
     except NoSuchElementException:
         loc1 = road_address.find("구")
@@ -277,7 +277,7 @@ for item in detail_link_list:
                 elif unit_room_data.find("무관") >= 0:
                     gender = "N"
                 else:
-                    gender = "N"
+                    gender = None
                 # 면적
                 if unit_room_data.find("㎡") >= 0:
                     unit_loc1 = unit_room_data.find("(")
