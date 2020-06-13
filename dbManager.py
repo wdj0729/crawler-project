@@ -1,18 +1,16 @@
+import sys
+from traceback import print_exc
 import pymysql
 from sharekim_util import timer
+
+date_format_str = "DATE_FORMAT(NOW(), '%Y-%m-01')"
 insert_into_house_SQL = """insert into sharehouse.houses 
 (house_name, area, house_type, room_cnt,washroom_cnt, now_floor, total_floor, road_address, district, building)
 values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
 
-insert_into_room_SQL = """
-insert into sharehouse.rooms (room_name, gender, bed_cnt, area, house_id) 
-values (%s, %s, %s, %s, (select id from houses where house_name = %s and DATE(h.created_at) >= DATE_FORMAT(NOW(), '%Y-%m-01')));
-"""
+insert_into_room_SQL = "insert into sharehouse.rooms (room_name, gender, bed_cnt, area, house_id) values (%s, %s, %s, %s, (select id from houses where house_name = %s and DATE(h.created_at) >= " + date_format_str + "));"
 
-insert_into_bed_SQL = """
-insert into sharehouse.beds (is_full, deposit, monthly_rent, room_id) 
-values (%s, %s, %s, (select id from rooms where house_id=(select id from houses where house_name=%s and DATE(h.created_at) >= DATE_FORMAT(NOW(), '%Y-%m-01')) and room_name=%s));
-"""
+insert_into_bed_SQL = "insert into sharehouse.beds (is_full, deposit, monthly_rent, room_id) values (%s, %s, %s, (select id from rooms where house_id=(select id from houses where house_name=%s and DATE(h.created_at) >= " + date_format_str + ") and room_name=%s));"
 
 
 class DbManger:
@@ -33,7 +31,10 @@ class DbManger:
             self.cursor.executemany(insert_into_bed_SQL, self.bed_data)
             self.db.commit()
         except Exception as e:
+            _, _, tb = sys.exc_info()
+            print('error line No = {}'.format(tb.tb_lineno))
             print(e)
+            print_exc()
         finally:
             self.db.close()
 

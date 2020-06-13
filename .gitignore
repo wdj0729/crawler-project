@@ -9,3 +9,6 @@ chromedriver.exe
 # testfiles
 test*
 driver.py
+
+# pickle_file
+*.pickle
