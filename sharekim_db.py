@@ -1,15 +1,15 @@
+import pickle, csv
+import sys
+import pymysql
+import string
+from time import *
+
 from selenium import webdriver
+from selenium.common.exceptions import *
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from bs4 import BeautifulSoup
-from time import *
-from selenium.common.exceptions import *
-import csv
-import pickle
-import pymysql
-import sys
 
 start = time()
 path = "./chromedriver.exe"
@@ -36,7 +36,11 @@ while True:
     after_exec_wrap_height = wrap_elem.size['height']
 
     if initial_wrap_height == after_exec_wrap_height:
-        break
+        sleep(0.5)
+        if initial_wrap_height == after_exec_wrap_height:
+            break
+        else:
+            continue
 
 # 상세 페이지 매물 링크 저장
 house_list_warp_elem = driver.find_element_by_xpath("""//*[@id="root"]/div[3]/div[2]/div[1]/div[2]""")
@@ -119,7 +123,7 @@ for item in detail_link_list:
         elif detail_info_data.find("기타") >= 0:
             house_type = "etc"
         else:
-            house_type = "NULL"
+            house_type = None
         # 방
         if detail_info_data.find("방") >= 0:
             loc = detail_info_data.find("방")
@@ -173,11 +177,12 @@ for item in detail_link_list:
         driver3.find_element_by_xpath("""//*[@id="keyword"]""").clear()
 
         driver3.find_element_by_xpath("""//*[@id="keyword"]""").send_keys(road_address)
+        sleep(0.1)
         driver3.find_element_by_xpath("""//*[@id="searchButton"]""").click()
 
-        district = ""
-        building = ""
-        building_data = ""
+        district = None
+        building = None
+        building_data = None
 
         building_info = driver3.find_element_by_xpath("""//*[@id="list1"]/div[2]/span[2]""")
         building_data = building_info.text.strip()
@@ -192,28 +197,24 @@ for item in detail_link_list:
             district = building_data[loc1 - 3:loc1 + 1].replace("시", "").replace("별", "").replace(" ", "")
             # 동
             if building_data.find("동") >= 0:
-                building = building_data[loc1 + 2:loc1 + 6].replace(" ", "").replace("1", "").replace("2", "")
-                building = building.replace("3", "").replace("4", "").replace("5", "")
-                building = building.replace("6", "").replace("7", "").replace("8", "")
-                building = building.replace("9", "").replace("0", "")
+                building = building_data[loc1 + 2:loc1 + 6].strip()
+                building = "".join([i for i in building if not i.isdigit()])
                 # 필동가 -> 필동
                 if building == "필동가":
                     building = "필동"
             else:
-                building = ""
+                building = None
         # 구 못 찾을 경우
         else :
-            district = ""
-            building = ""
+            district = None
+            building = None
 
     except NoSuchElementException:
         loc1 = road_address.find("구")
         district = road_address[loc1-3:loc1 +1].replace("시", "").replace("별", "").replace(" ", "")
         loc2 = road_address.find("동")
-        building = road_address[loc2-3:loc2 +1].replace(" ", "").replace("1", "").replace("2", "")
-        building = building.replace("3", "").replace("4", "").replace("5", "")
-        building = building.replace("6", "").replace("7", "").replace("8", "")
-        building = building.replace("9", "").replace("0", "")
+        building = building_data[loc2-3:loc2 +1].strip()
+        building = "".join([i for i in building if not i.isdigit()])
         pass
     
     # 경기도, 인천시 제외
@@ -277,7 +278,7 @@ for item in detail_link_list:
                 elif unit_room_data.find("무관") >= 0:
                     gender = "N"
                 else:
-                    gender = "N"
+                    gender = None
                 # 면적
                 if unit_room_data.find("㎡") >= 0:
                     unit_loc1 = unit_room_data.find("(")

@@ -1,2 +1,11 @@
 debug.log
+
+# venv
 /venv
+
+# driver
+chromedriver.exe
+
+# testfiles
+test*
+driver.py
