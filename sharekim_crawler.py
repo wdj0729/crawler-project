@@ -106,8 +106,7 @@ class Crawler:
                     """//*[@id="blur-wrap"]/div[3]/div[2]/div[1]/section[2]/p""")
                 road_address = address.text.strip()
                 if road_address.find("경기") >= 0 or road_address.find("인천") >= 0:
-                    district = None
-                    building = None
+                    continue
                 else:
                     (district, building) = self.address_trans(address_driver, road_address)
 
