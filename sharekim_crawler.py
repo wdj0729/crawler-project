@@ -161,11 +161,7 @@ class Crawler:
                         # div 예외처리
                         if badge_span_elem.text == "상세설명":
                             badge_span_elem = bed.find_elements_by_tag_name('span')[4]
-                            # 만실
-                            if badge_span_elem.text == "만실":
-                                is_full = True
-                            else:
-                                is_full = False
+                            is_full = True
 
                             rent_fee_elem = bed.find_elements_by_tag_name('span')[6]
                             rent_fee = str(rent_fee_elem.text)[:str(rent_fee_elem.text).find('만원')].split('/')
@@ -178,8 +174,10 @@ class Crawler:
                             # 만실
                             if badge_span_elem.text == "만실":
                                 is_full = True
-                            else:
+                            elif badge_span_elem.text == "즉시입주":
                                 is_full = False
+                            else:
+                                is_full = True
 
                             rentfee_elem = bed.find_elements_by_tag_name('span')[3]
                             rent_fee = str(rentfee_elem.text)[:str(rentfee_elem.text).find('만원')].split('/')
