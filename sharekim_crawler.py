@@ -1,11 +1,6 @@
 import os, sys
 import pickle
 
-import pymysql
-from time import sleep
-from multiprocessing import Pool
-from traceback import print_exc
-
 from sharekim_util import *
 
 from selenium import webdriver
@@ -15,6 +10,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+
 class Crawler:
     def __init__(self):
         self.house_list = []
@@ -22,9 +18,11 @@ class Crawler:
     def crawl(self, urls: list) -> list:
         driver = get_driver(visible=False)
         address_driver = get_driver(visible=False)
-
+        blank_cnt = 0
         for url in urls:
             if url == "https://sharekim.com/":
+                blank_cnt += 1
+                print("blank url cnt: {}".format(blank_cnt))
                 continue
             try:
                 driver.get(url)
@@ -109,6 +107,8 @@ class Crawler:
                     continue
                 else:
                     (district, building) = self.address_trans(address_driver, road_address)
+                    if building == '':
+                        building = None
 
                 room_dict_list = []
 
@@ -201,7 +201,7 @@ class Crawler:
                 house_data_dict = {"house_name": house_name, "house_area": house_area, "house_type": house_type,
                                    "room_cnt": room_cnt, "washroom_cnt": washroom_cnt, "now_floor": now_floor,
                                    "total_floor": total_floor, "road_address": road_address, "district": district,
-                                   "building": building, "room_dict_list": room_dict_list}
+                                   "building": building, "house_url": url, "room_dict_list": room_dict_list}
                 self.house_list.append(house_data_dict)
             except Exception as e:
                 _, _, tb = sys.exc_info()
@@ -248,7 +248,7 @@ class Crawler:
                     if building == "필동가":
                         building = "필동"
                 else:
-                    building = None
+                    raise NoSuchElementException
             # 구 못 찾을 경우
             else:
                 district = None
@@ -262,14 +262,21 @@ class Crawler:
             building = "".join([i for i in building if not i.isdigit()])
 
         finally:
+            if building is None:
+                building = road_address.split(" ")[2]
+                building = building[:building.rfind("동")+1]
+            elif building.strip() == "":
+                building = None
             return district, building
 
     @timer
     def run(self) -> list:
+        import time
+        time_str = time.strftime('%Y-%m-%d', time.localtime(time.time()))
         retry_cnt = 3
         house_url_list = []
-        if os.path.isfile("house_url_list.pickle"):
-            with open('house_url_list.pickle', 'rb')as f:
+        if os.path.isfile("house_url_list_"+time_str+".pickle"):
+            with open('house_url_list'+time_str+'.pickle', 'rb')as f:
                 house_url_list = pickle.load(f)
         else:
             while True:
@@ -283,15 +290,13 @@ class Crawler:
                     if retry_cnt == 0:
                         raise
                 else:
-                    if len(house_url_list)<100:
+                    if len(house_url_list) < 100:
                         continue
                     print("성공")
                     print("링크 갯수 {}개".format(len(house_url_list)))
-                    with open('house_url_list.pickle','wb') as f:
+                    with open('house_url_list'+time_str+'.pickle', 'wb') as f:
                         pickle.dump(house_url_list, f, pickle.HIGHEST_PROTOCOL)
                     break
 
         self.crawl(house_url_list)
         return self.house_list
-
-

@@ -5,21 +5,21 @@ from sharekim_util import timer
 
 date_format_str = "DATE_FORMAT(NOW(), '%Y-%m-01')"
 insert_into_house_SQL = """insert into sharehouse.houses 
-(house_name, area, house_type, room_cnt,washroom_cnt, now_floor, total_floor, road_address, district, building)
-values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
+(house_name, area, house_type, room_cnt,washroom_cnt, now_floor, total_floor, road_address, district, building, house_url)
+values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
 
 insert_into_room_SQL = """insert into sharehouse.rooms (room_name, gender, bed_cnt, area, house_id) 
-values (%s, %s, %s, %s, (select id from houses as h where house_name = %s and DATE(h.created_at) >= DATE_FORMAT(NOW(), '%%Y-%%m-01')));"""
+values (%s, %s, %s, %s, (select id from houses as h where house_name = %s and DATE(h.created_at) >= DATE_FORMAT(NOW(), '%%Y-%%m-%%d')));"""
 
 insert_into_bed_SQL = """insert into sharehouse.beds (is_full, deposit, monthly_rent, room_id) 
 values (%s, %s, %s, (select id from rooms where house_id = 
-(select id from houses as h where house_name=%s and DATE(h.created_at) >= DATE_FORMAT(NOW(), '%%Y-%%m-01')) 
+(select id from houses as h where house_name=%s and DATE(h.created_at) >= DATE_FORMAT(NOW(), '%%Y-%%m-%%d')) 
 and room_name=%s));"""
 
 select_house_sql = """
 select *
 from sharehouse.houses as h
-where h.house_name=%s and DATE(h.created_at) >= DATE_FORMAT(NOW(), '%%Y-%%m-01')
+where h.house_name=%s and DATE(h.created_at) >= DATE_FORMAT(NOW(), '%%Y-%%m-%%d')
 """
 
 delete_house_sql = """
@@ -72,10 +72,12 @@ class DbManger:
             house_tmp = [house["house_name"], house["house_area"], house["house_type"], house["room_cnt"],
                          house["washroom_cnt"],
                          house["now_floor"], house["total_floor"], house["road_address"], house["district"],
-                         house["building"]]
+                         house["building"], house["house_url"]]
             self.house_data.append(house_tmp)
             for room in house["room_dict_list"]:
                 room_tmp = [room["room_name"], room["gender"], room["bed_cnt"], room["room_area"], house["house_name"]]
+                if room["bed_cnt"] != len(room["bed_dict_list"]):
+                    print(house)
                 self.room_data.append(room_tmp)
                 for bed in room["bed_dict_list"]:
                     bed_tmp = [bed["is_full"], bed["deposit"], bed["monthly_rent"], house["house_name"],
@@ -92,8 +94,9 @@ class DbManger:
             house_tmp = [house["house_name"], house["house_area"], house["house_type"], house["room_cnt"],
                          house["washroom_cnt"],
                          house["now_floor"], house["total_floor"], house["road_address"], house["district"],
-                         house["building"]]
+                         house["building"], house["house_url"]]
             try:
+
                 if self.cursor.execute(select_house_sql, house["house_name"]) > 0:
                     self.cursor.execute(delete_house_sql, house["house_name"])
                 self.cursor.execute(insert_into_house_SQL, house_tmp)
