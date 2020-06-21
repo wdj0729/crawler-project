@@ -276,7 +276,7 @@ class Crawler:
         retry_cnt = 3
         house_url_list = []
         if os.path.isfile("house_url_list_"+time_str+".pickle"):
-            with open('house_url_list'+time_str+'.pickle', 'rb')as f:
+            with open('house_url_list_'+time_str+'.pickle', 'rb')as f:
                 house_url_list = pickle.load(f)
         else:
             while True:
@@ -294,7 +294,7 @@ class Crawler:
                         continue
                     print("성공")
                     print("링크 갯수 {}개".format(len(house_url_list)))
-                    with open('house_url_list'+time_str+'.pickle', 'wb') as f:
+                    with open('house_url_list_'+time_str+'.pickle', 'wb') as f:
                         pickle.dump(house_url_list, f, pickle.HIGHEST_PROTOCOL)
                     break
 

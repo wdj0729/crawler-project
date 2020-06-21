@@ -9,7 +9,7 @@ if __name__ == '__main__':
     time_str = time.strftime('%Y-%m-%d', time.localtime(time.time()))
     try:
         if os.path.isfile("house_list_"+time_str+".pickle"):
-            with open('house_list.pickle', 'rb')as f:
+            with open("house_list_"+time_str+".pickle", 'rb')as f:
                 house_list = pickle.load(f)
         else:
             crawler = Crawler()

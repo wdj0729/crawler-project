@@ -24,7 +24,7 @@ where h.house_name=%s and DATE(h.created_at) >= DATE_FORMAT(NOW(), '%%Y-%%m-%%d'
 
 delete_house_sql = """
 delete from houses
-where houses.house_name=%s
+where houses.house_name=%s and DATE(houses.created_at) >= DATE_FORMAT(NOW(), '%%Y-%%m-%%d')
 """
 
 class DbManger:
@@ -96,7 +96,6 @@ class DbManger:
                          house["now_floor"], house["total_floor"], house["road_address"], house["district"],
                          house["building"], house["house_url"]]
             try:
-
                 if self.cursor.execute(select_house_sql, house["house_name"]) > 0:
                     self.cursor.execute(delete_house_sql, house["house_name"])
                 self.cursor.execute(insert_into_house_SQL, house_tmp)
